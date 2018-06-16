@@ -1,7 +1,9 @@
-SndBuf snare => dac;
-SndBuf kick => dac;
-SndBuf click => dac;
-SndBuf hh => dac;
+SndBuf snare => Gain master_gain => dac;
+SndBuf kick => master_gain => dac;
+SndBuf click => master_gain => dac;
+SndBuf hh => master_gain => dac;
+
+0.1 => master_gain.gain;
 
 string kickFilenames[3];
 me.dir() + "/samples/kick_01.wav" =>  kickFilenames[0];

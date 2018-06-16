@@ -16,7 +16,7 @@ cf => carrier.freq;
 89 => float mf;
 mf => mod.freq;
 200 => float index; //mod.gain;
-0.7 => output_gain.gain;
+0.15 => output_gain.gain;
 
 // note stuff
 [36.0, 40.0, 43.0, 47.0, 48.0, 52.0, 55.0, 59.0, 60.0] @=> float notes[];
@@ -27,6 +27,7 @@ mf => mod.freq;
 adsr.set(35::ms, 70::ms, 0.3, 600::ms);
 
 //GUI
+/*
 MAUI_View view;
 MAUI_Slider s_mod_gain, s_mod_freq, s_carrier_freq, s_output_gain, s_reverb_mix;
 MAUI_Button b_play, b_cont;
@@ -94,6 +95,7 @@ spork ~ reverbMixSlider(s_reverb_mix);
 spork ~ playButton(b_play);
 spork ~ contButton(b_cont);
 <<<"Created GUI Components">>>;
+*/
 
 fun void oscEnvParameters() {
     orec.event("/envParameters,ffff") @=> OscEvent event;   
@@ -126,8 +128,8 @@ fun void oscNoteOn() {
             Std.mtof(notes[note] + (octave*12)) => float f;
             f => carrier.freq;
             carrier.freq() * freq_ratio => mod.freq;
-            s_carrier_freq.value(carrier.freq());
-            s_mod_freq.value(mod.freq());
+            // s_carrier_freq.value(carrier.freq());
+            // s_mod_freq.value(mod.freq());
             adsr.keyOn();
         }
     }    
@@ -169,7 +171,7 @@ fun void oscReverbMix() {
         { 
             event.getFloat() => float r_mix;
             <<<"Reverb Mix Changed to ", r_mix>>>;
-            s_reverb_mix.value(r_mix);
+            // s_reverb_mix.value(r_mix);
             r_mix => reverb.mix;
         }    
     }    
@@ -181,37 +183,7 @@ fun void triggerADSR(float a, float d){
     adsr.keyOff(); 
 }
 
-
-fun void oscChangeParameters() {
-    orec.event("/parameters,fff") @=> OscEvent event;  // pluck pos, damping, detune 
-    while ( true )
-    { 
-        event => now; // wait for events to arrive.
-        while( event.nextMsg() != 0 )
-        { 
-            /*
-            event.getFloat() => pluckPos;
-            event.getFloat() => stringDamp;
-            event.getFloat() => detune;
-            event.getFloat() => reverbMix;
-            <<<"pos: ", pluckPos, " damp:", stringDamp, " detune:", detune, " verbMix:", reverbMix>>>;
-            mand.pluckPos( pluckPos);
-            mand.stringDamping( stringDamp );
-            mand.stringDetune( detune );
-            reverb.mix(reverbMix);
-            */
-            
-        }
-    }         
-}
-
-spork ~ oscNoteOn();
-spork ~ oscNoteOff();
-spork ~ oscEnvParameters();
-spork ~ oscChangeParameters();
-spork ~ oscFreqRatio();
-spork ~ oscReverbMix();
-
+/*
 fun void playButton(MAUI_Button b) {
     while(1) {
         b => now;
@@ -273,6 +245,13 @@ fun void reverbMixSlider(MAUI_Slider s) {
         s.value() => reverb.mix;
     }  
 }
+*/
+
+spork ~ oscNoteOn();
+spork ~ oscNoteOff();
+spork ~ oscEnvParameters();
+spork ~ oscFreqRatio();
+spork ~ oscReverbMix();
 
 while(true) {
     cf + (index * mod.last()) => carrier.freq;

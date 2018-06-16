@@ -1,7 +1,8 @@
 // Physical model instrument for O&S
-Mandolin mand => JCRev reverb => Gain gain => dac;
+Mandolin mand => NRev reverb => Gain gain => dac;
+0.1 => gain.gain;
 
-0.4 => reverb.mix;
+0.4 => float reverbMix => reverb.mix;
 
 [48.0, 52.0, 55.0, 59.0, 60.0, 64.0, 67.0, 71.0, 72.0] @=> float notes[];
 
@@ -47,7 +48,7 @@ fun void oscPluck() {
                 Std.mtof(notes[note_index]) => mand.freq;
             }
             event.getFloat() => float vel;
-            <<<"note on , " note_index, " at velocity: ", vel>>>;
+            <<<"note on , ", note_index, " at velocity: ", vel>>>;
             mand.pluck( vel );
         }
     }         
