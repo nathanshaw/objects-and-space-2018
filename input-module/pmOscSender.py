@@ -17,17 +17,35 @@ if __name__ == "__main__":
     client = udp_client.SimpleUDPClient(ip, port)
     args = parseCommandLineArgs()
 
+    current_instrument = 0
+    current_mode = 0
     while True:
         pluck_pos = random.random()
         damping = random.random()
         detune = random.random()
-        verb = random.random()
-        vel = random.random()
+        verb = random.random()/3
+        vel = (random.random()+2)/3
         note = random.randint(0, 8)
         client.send_message("/parameters", [pluck_pos, damping, detune, verb])
         client.send_message("/play", [note, vel]);
+        if random.random() < 0.07:
+            if current_instrument == 0:
+                current_instrument = 1
+            else:
+                current_instrument = 0
+            client.send_message("/instrument", current_instrument)
+            if args.verbose is True:
+                print("changed instrument")
+        if random.random() < 0.07:
+            if current_mode == 0:
+                current_mode = 1
+            else:
+                current_mode = 0
+            client.send_message("/mode", current_mode)
+            if args.verbose is True:
+                print("changed playMode")
         if args.verbose is True:
-            print("plucking now : note:{} vel:{} pos:{} damp:{} detune{}".format(
-            note, vel, pluck_pos, damping, detune))
-        time.sleep(0.4)
+            print("note:{} vel:{} pos:{} damp:{} detune:{} verb:{}".format(
+            note, vel, pluck_pos, damping, detune, verb))
+        time.sleep(0.2)
 
