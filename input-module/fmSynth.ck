@@ -19,7 +19,7 @@ SawOsc carrierSaw => adsr;
 1 => int TRI;
 2 => int SAW;
 
-[0.125, 0.25, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 6.0] @=> float freqRatios[];
+[0.06125, 0.125, 0.25, 0.5, 1.0, 1.25, 1.5, 2.0, 2.5, 4.0] @=> float freqRatios[];
 
 1 => int GUI;
 1000 => float cf;
@@ -194,7 +194,7 @@ fun void oscNoteOff() {
 }
 
 fun void oscFreqRatio() {
-    orec.event("/freqRatio,i") @=> OscEvent event;   
+    orec.event("/frequencyRatio,i") @=> OscEvent event;   
     while ( true )
     { 
         event => now; // wait for events to arrive.

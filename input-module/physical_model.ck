@@ -84,7 +84,7 @@ fun void randomizeParameters() {
 
 
 fun void oscPlay() {
-    orec.event("/play,if") @=> OscEvent event;   
+    orec.event("/noteOn,if") @=> OscEvent event;   
     while ( true )
     { 
         event => now; // wait for events to arrive.
@@ -187,7 +187,7 @@ fun void oscChangeInstrument() {
 
 fun void oscChangePlayMode() {
     // listens for OSC messages which change the instrument type
-    orec.event("/mode,i") @=> OscEvent event;
+    orec.event("/playMode,i") @=> OscEvent event;
     while (true) {
         event => now; // wait for events to arrive.
         while( event.nextMsg() != 0 )
@@ -199,6 +199,7 @@ fun void oscChangePlayMode() {
 }
 
 
+// start listening for OSC messages
 spork ~ oscChangePlayMode();
 spork ~ oscChangeInstrument();
 spork ~ oscPlay();
@@ -206,12 +207,6 @@ spork ~ oscChangeParameters();
 
 
 while (1) {
-    /*
-    randomizeParameters();
-    newRandomNote();
-    mand.pluck(Math.random2f(0.9, 1.0));
-    <<<"pluckpos: ", pluckPos, " Damping: ", stringDamp, 
-    " Detune: ", detune, "note : ", note, " freq: ", freq>>>;    
-    */
+    // gots to pass time or MA crashes
     1::second => now;
 }
