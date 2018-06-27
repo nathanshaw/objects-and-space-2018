@@ -6,22 +6,38 @@ orec.listen();
 
 // FM synthesis instrument for O&S
 SinOsc mod => blackhole;
-SinOsc carrier => ADSR adsr => JCRev reverb => Gain output_gain => dac;
-0 => carrier.sync;
+SinOsc carrierSin => ADSR adsr => JCRev reverb => Gain output_gain => dac;
+TriOsc carrierTri => adsr;
+SawOsc carrierSaw => adsr;
 
-0 => int current_mode;// 0 is note on 1 is continuous
+0 => carrierSin.sync;
+0 => carrierTri.sync;
+0 => carrierSaw.sync;
+
+1 => int selectedOsc;
+0 => int SIN;
+1 => int TRI;
+2 => int SAW;
+
+[0.125, 0.25, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 6.0] @=> float freqRatios[];
+
 1 => int GUI;
 1000 => float cf;
-cf => carrier.freq;
-89 => float mf;
+cf => carrierSin.freq;
+cf => carrierTri.freq;
+cf => carrierSaw.freq;
+80 => float mf;
 mf => mod.freq;
 200 => float index; //mod.gain;
-0.15 => output_gain.gain;
+0.5 => float MAX_GAIN => carrierSin.gain => carrierTri.gain => carrierSaw.gain;
+MAX_GAIN => output_gain.gain;
 
 // note stuff
-[36.0, 40.0, 43.0, 47.0, 48.0, 52.0, 55.0, 59.0, 60.0] @=> float notes[];
+[48.0, 50, 52.0, 55.0, 57.0, 60.0, 62.0, 64.0, 67.0, 69.0, 72.0] @=> float notes[];
+for (int i; i < 10; i++) {
+    notes[i] - 12 => notes[i];
+}
 3.5 => float freq_ratio;
-2 => int octave;
 
 // envelope
 adsr.set(35::ms, 70::ms, 0.3, 600::ms);
@@ -97,6 +113,35 @@ spork ~ contButton(b_cont);
 <<<"Created GUI Components">>>;
 */
 
+
+fun void quickFade (UGen ugen, float target) {
+    float factor;
+    
+    if (target == 0.0){
+        0.01 => target;
+    }
+    
+    if (ugen.gain() > target){
+        0.998 => factor;
+    }
+    else{
+        1.002 => factor;
+    }
+    while(true){
+        ugen.gain() * factor => ugen.gain;
+        1::samp => now;
+        if (factor > 1.0 && ugen.gain() > target){
+            target => ugen.gain;
+            break;
+        }
+        else if (factor < 1.0 && ugen.gain() < target){
+            target => ugen.gain;
+            break;
+        }
+    }
+}
+
+
 fun void oscEnvParameters() {
     orec.event("/envParameters,ffff") @=> OscEvent event;   
     while ( true )
@@ -125,9 +170,9 @@ fun void oscNoteOn() {
         while( event.nextMsg() != 0 )
         { 
             event.getInt() => int note;
-            Std.mtof(notes[note] + (octave*12)) => float f;
-            f => carrier.freq;
-            carrier.freq() * freq_ratio => mod.freq;
+            Std.mtof(notes[note]) => float f;
+            f => carrierSin.freq => carrierTri.freq => carrierSaw.freq;
+            carrierSin.freq() * freq_ratio => mod.freq;
             // s_carrier_freq.value(carrier.freq());
             // s_mod_freq.value(mod.freq());
             adsr.keyOn();
@@ -149,15 +194,15 @@ fun void oscNoteOff() {
 }
 
 fun void oscFreqRatio() {
-    orec.event("/freqRatio,f") @=> OscEvent event;   
+    orec.event("/freqRatio,i") @=> OscEvent event;   
     while ( true )
     { 
         event => now; // wait for events to arrive.
         while( event.nextMsg() != 0 )
         { 
-            event.getFloat() => freq_ratio;
+            freqRatios[event.getInt()] => freq_ratio;
             <<<"Freq Ratio Changed to ", freq_ratio>>>;
-            carrier.freq() * freq_ratio => mod.freq;
+            carrierSin.freq() * freq_ratio => mod.freq;
         }    
     }    
 }
@@ -169,7 +214,7 @@ fun void oscReverbMix() {
         event => now; // wait for events to arrive.
         while( event.nextMsg() != 0 )
         { 
-            event.getFloat() => float r_mix;
+            event.getFloat()/7 => float r_mix;
             <<<"Reverb Mix Changed to ", r_mix>>>;
             // s_reverb_mix.value(r_mix);
             r_mix => reverb.mix;
@@ -193,21 +238,6 @@ fun void playButton(MAUI_Button b) {
     }
 }
 
-fun void contButton(MAUI_Button b) {
-    while(1) {
-        b => now;
-        if (current_mode == 0) {
-            carrier =< adsr;
-            carrier => reverb;
-            1 => current_mode;
-        }
-        else {
-            carrier =< reverb;
-            carrier => adsr;
-            0 => current_mode;
-        }
-    }
-}
 
 fun void modGainSlider(MAUI_Slider s) {
     while(1){
@@ -247,6 +277,34 @@ fun void reverbMixSlider(MAUI_Slider s) {
 }
 */
 
+fun void oscMode() {
+    orec.event("/mode,i") @=> OscEvent event;   
+    while ( true )
+    { 
+        event => now; // wait for events to arrive.
+        while( event.nextMsg() != 0 )
+        { 
+            event.getInt() => selectedOsc;
+            <<<"Mode Changed to ", selectedOsc>>>;
+            if (selectedOsc == SIN) {
+                quickFade(carrierTri, 0.01);
+                quickFade(carrierSaw, 0.01);
+                quickFade(carrierSin, MAX_GAIN);
+            }
+            else if (selectedOsc == TRI) {
+                quickFade(carrierSin, 0.01);
+                quickFade(carrierSaw, 0.01);
+                quickFade(carrierTri, MAX_GAIN);
+            } else {
+                quickFade(carrierTri, 0.01);
+                quickFade(carrierSin, 0.01);
+                quickFade(carrierSaw, MAX_GAIN);
+            }
+        }    
+    }    
+}
+
+spork ~ oscMode();
 spork ~ oscNoteOn();
 spork ~ oscNoteOff();
 spork ~ oscEnvParameters();
@@ -254,6 +312,13 @@ spork ~ oscFreqRatio();
 spork ~ oscReverbMix();
 
 while(true) {
-    cf + (index * mod.last()) => carrier.freq;
+    if (selectedOsc == SIN) {
+        cf + (index * mod.last()) => carrierSin.freq;
+    } else if (selectedOsc == TRI){
+        cf + (index * mod.last()) => carrierTri.freq;    
+    }
+    else {
+        cf + (index * mod.last()) => carrierSaw.freq;
+    }
     1::samp => now;
 }

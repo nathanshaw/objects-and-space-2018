@@ -24,14 +24,12 @@ if __name__ == "__main__":
         attack = random.random()*100
         decay = random.random()*100
         sustain = random.random() * 0.6 + 0.1
-        release = random.random()*1000
+        release = random.random()*100
 
-        freq_ratio = float(random.randint(1,4))
+        freq_ratio = random.randint(0,9)
         reverb_mix = random.random()
 
-        if random.random() < 0.4:
-            freq_ratio = freq_ratio - 0.5
-        if random.random() < 0.02:
+        if random.random() < 0.05:
             client.send_message("/envParameters", [attack, decay, sustain, release]);
             if args.verbose is True:
                 print("envParameters: a:{} d:{} s:{} r{}".format(attack, decay,
@@ -47,7 +45,12 @@ if __name__ == "__main__":
             if args.verbose is True:
                 print("changed reverb mix to :", reverb_mix)
 
-        client.send_message("/noteOn", random.randint(0, 8))
+        if random.random() < 0.05:
+            client.send_message("/mode", random.randint(0,2))
+            if args.verbose is True:
+                print("changed carrier mode")
+
+        client.send_message("/noteOn", random.randint(0, 9))
 
         if args.verbose is True:
             sys.stdout.write("note on ")
